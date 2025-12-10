@@ -1,6 +1,6 @@
 import { User } from "../models/users.js";
 import bcrypt from "bcrypt";
-
+import jwt from "jsonwebtoken";
 export const register = async (req, res) => {
     try {
         const { fullName, email, password } = req.body;
@@ -36,42 +36,59 @@ export const register = async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({
-            success: false,
+            sucess: false,
             message: "Server error"
         });
     }
 };
 
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-export const login = async(req, res) =>{
-    try {
-          const {email, password}  = req.body;
-        if (!email || !password) {
-            return res.status(403).json({
-                sucess: false,
-                message: "All fields are required.",
-            })
-        }
-      
-        const user = await User.findOne({email});
-        if(!user){
-            return res.status(403).json({
-                sucess: false,
-                message: "Incorrect password or password.",
-            })
-        }
-        const isPasswordMatch = await   bcrypt.compare(password, user.password);
-        if(!isPasswordMatch){
-            return res.status(403).json({
-                sucess: false,
-                message: "Incorrect password or password.",
-            })
-        }
-        return res.status(200).json({
-            sucess:true,
-            message:`Welcome back ${user.fullName}`
-        })
-    } catch (error) {
-        
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
-}
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect email or password",
+      });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect email or password",
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.SECRET_KEY,
+      { expiresIn: '25h' } // token valid for 25 hours
+    );
+
+    return res
+      .status(200)
+      .cookie("token", token, { httpOnly: true, sameSite: "strict" })
+      .json({
+        success: true,
+        message: `Welcome back ${user.fullName}`,
+      });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
