@@ -43,3 +43,35 @@ export const register = async (req, res) => {
 };
 
 
+export const login = async(req, res) =>{
+    try {
+          const {email, password}  = req.body;
+        if (!email || !password) {
+            return res.status(403).json({
+                sucess: false,
+                message: "All fields are required.",
+            })
+        }
+      
+        const user = await User.findOne({email});
+        if(!user){
+            return res.status(403).json({
+                sucess: false,
+                message: "Incorrect password or password.",
+            })
+        }
+        const isPasswordMatch = await   bcrypt.compare(password, user.password);
+        if(!isPasswordMatch){
+            return res.status(403).json({
+                sucess: false,
+                message: "Incorrect password or password.",
+            })
+        }
+        return res.status(200).json({
+            sucess:true,
+            message:`Welcome back ${user.fullName}`
+        })
+    } catch (error) {
+        
+    }
+}

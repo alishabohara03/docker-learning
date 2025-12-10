@@ -12,4 +12,4 @@ import mongoose from "mongoose";
    
  });
 
- export const Todo = mongoose.model("User", todoSchema)
+ export const Todo = mongoose.models.Todo || mongoose.model("Todo", todoSchema);
